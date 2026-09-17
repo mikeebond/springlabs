@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Планувальник задач | ІО-45</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; }
+        .completed { text-decoration: line-through; color: gray; }
+        form { display: inline; }
+        .form-container { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+    </style>
+</head>
+<body>
+<h1>Лабораторна робота №2</h1>
+<h2>Планувальник задач (Бондарчук М.О., ІО-45)</h2>
+
+<div class="form-container">
+    <h3>Додати нову задачу</h3>
+    <form th:action="@{/tasks/add}" method="post">
+        <input type="text" name="title" placeholder="Назва задачі" required>
+        <input type="date" name="date" required>
+        <select name="priority">
+            <option value="Високий">Високий</option>
+            <option value="Середній">Середній</option>
+            <option value="Низький">Низький</option>
+        </select>
+        <button type="submit">Додати</button>
+    </form>
+</div>
+
+<table>
+    <thead>
+    <tr>
+        <th>Назва</th>
+        <th>Дата</th>
+        <th>Пріоритет</th>
+        <th>Статус</th>
+        <th>Дії</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="task : ${tasks}">
+        <td th:text="${task.title}" th:classappend="${task.completed} ? 'completed' : ''"></td>
+        <td th:text="${task.date}"></td>
+        <td th:text="${task.priority}"></td>
+        <td th:text="${task.completed ? 'Виконана' : 'В процесі'}"></td>
+        <td>
+            <form th:if="${!task.completed}" th:action="@{/tasks/complete}" method="post">
+                <input type="hidden" name="id" th:value="${task.id}">
+                <button type="submit">Виконано</button>
+            </form>
+            <form th:action="@{/tasks/delete}" method="post">
+                <input type="hidden" name="id" th:value="${task.id}">
+                <button type="submit">Видалити</button>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
