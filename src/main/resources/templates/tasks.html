@@ -6,16 +6,19 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; }
         table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
         th { background-color: #f2f2f2; }
         .completed { text-decoration: line-through; color: gray; }
+        .priority-high { color: red; font-weight: bold; }
+        .priority-medium { color: darkorange; font-weight: bold; }
+        .priority-low { color: green; }
         form { display: inline; }
         .form-container { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
     </style>
 </head>
 <body>
-<h1>Лабораторна робота №2</h1>
-<h2>Планувальник задач (Бондарчук М.О., ІО-45)</h2>
+<h1>Лабораторна робота №3</h1>
+<h2>Планувальник задач</h2>
 
 <div class="form-container">
     <h3>Додати нову задачу</h3>
@@ -42,13 +45,27 @@
     </tr>
     </thead>
     <tbody>
+    <!-- Використання циклу each -->
     <tr th:each="task : ${tasks}">
         <td th:text="${task.title}" th:classappend="${task.completed} ? 'completed' : ''"></td>
-        <td th:text="${task.date}"></td>
-        <td th:text="${task.priority}"></td>
-        <td th:text="${task.completed ? 'Виконана' : 'В процесі'}"></td>
+        <td th:text="${task.date ?: 'Дата не вказана'}"></td>
+
+        <!-- Використання елементу вибору switch/case -->
+        <td th:switch="${task.priority}">
+            <span th:case="'Високий'" class="priority-high" th:text="${task.priority}"></span>
+            <span th:case="'Середній'" class="priority-medium" th:text="${task.priority}"></span>
+            <span th:case="'Низький'" class="priority-low" th:text="${task.priority}"></span>
+            <span th:case="*" th:text="${task.priority}"></span>
+        </td>
+
+        <!-- Використання умовного форматування if/unless -->
         <td>
-            <form th:if="${!task.completed}" th:action="@{/tasks/complete}" method="post">
+            <span th:if="${task.completed}">Виконана</span>
+            <span th:unless="${task.completed}">В процесі</span>
+        </td>
+
+        <td>
+            <form th:unless="${task.completed}" th:action="@{/tasks/complete}" method="post">
                 <input type="hidden" name="id" th:value="${task.id}">
                 <button type="submit">Виконано</button>
             </form>

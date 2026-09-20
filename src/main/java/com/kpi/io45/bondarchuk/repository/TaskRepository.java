@@ -32,4 +32,8 @@ public class TaskRepository {
         Optional<Task> taskOpt = tasks.stream().filter(t -> t.getId().equals(id)).findFirst();
         taskOpt.ifPresent(task -> task.setCompleted(true));
     }
+    public Optional<Task> findById(String id) {
+        return tasks.stream().filter(t -> t.getId().equals(id)).findFirst();
+    }
 }
+
