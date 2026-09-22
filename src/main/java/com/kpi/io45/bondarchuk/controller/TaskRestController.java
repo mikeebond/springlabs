@@ -15,7 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
-@Tag(name = "Tasks API", description = "RESTful вебсервіс для управління задачами")
+@Tag(name = "Tasks API", description = "RESTful web service for task management")
 public class TaskRestController {
 
     private final TaskService taskService;
@@ -24,8 +24,8 @@ public class TaskRestController {
         this.taskService = taskService;
     }
 
-    @Operation(summary = "Отримати список задач", description = "Повертає список задач із підтримкою фільтрації за статусом та пагінації.")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "Успішне отримання списку")})
+    @Operation(summary = "Get the list of tasks", description = "Returns a list of tasks with support for status filtering and pagination..")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "\n" + "List successfully retrieved")})
     @GetMapping
     public ResponseEntity<List<Task>> getAllTasks(
             @RequestParam(required = false) Boolean completed,
@@ -34,18 +34,18 @@ public class TaskRestController {
         return ResponseEntity.ok(taskService.getTasks(completed, page, size));
     }
 
-    @Operation(summary = "Створити нову задачу")
-    @ApiResponses({@ApiResponse(responseCode = "201", description = "Задачу успішно створено")})
+    @Operation(summary = "Create a new task")
+    @ApiResponses({@ApiResponse(responseCode = "201", description = "The task has been successfully created")})
     @PostMapping
     public ResponseEntity<Task> createTask(@RequestBody Task task) {
         taskService.addTask(task.getTitle(), task.getDate(), task.getPriority());
         return ResponseEntity.status(HttpStatus.CREATED).body(task);
     }
 
-    @Operation(summary = "Отримати задачу за ID")
+    @Operation(summary = "Get a task by ID")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Задачу знайдено"),
-            @ApiResponse(responseCode = "404", description = "Задачу не знайдено")
+            @ApiResponse(responseCode = "200", description = "\n" + "Task found"),
+            @ApiResponse(responseCode = "404", description = "Task not found")
     })
     @GetMapping("/{id}")
     public ResponseEntity<Task> getTaskById(@PathVariable String id) {
@@ -54,10 +54,10 @@ public class TaskRestController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Повне оновлення задачі", description = "Оновлює всі поля задачі за вказаним ID.")
+    @Operation(summary = "Full task update", description = " Updates all fields of the task with the specified ID.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Успішно оновлено"),
-            @ApiResponse(responseCode = "404", description = "Задачу не знайдено")
+            @ApiResponse(responseCode = "200", description = "Successfully updated"),
+            @ApiResponse(responseCode = "404", description = "Task not found")
     })
     @PutMapping("/{id}")
     public ResponseEntity<Task> updateTask(@PathVariable String id, @RequestBody Task task) {
@@ -66,10 +66,10 @@ public class TaskRestController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Часткове оновлення задачі", description = "Оновлює лише передані поля задачі (RFC 7386 Merge Patch).")
+    @Operation(summary = "Partial task update", description = "Updates only the provided task fields (RFC 7386 Merge Patch).")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Успішно оновлено"),
-            @ApiResponse(responseCode = "404", description = "Задачу не знайдено")
+            @ApiResponse(responseCode = "200", description = "Successfully updated"),
+            @ApiResponse(responseCode = "404", description = "Task not found")
     })
     @PatchMapping("/{id}")
     public ResponseEntity<Task> patchTask(@PathVariable String id, @RequestBody Map<String, Object> updates) {
@@ -78,10 +78,10 @@ public class TaskRestController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Видалити задачу")
+    @Operation(summary = "Delete task")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Успішно видалено без контенту у відповіді"),
-            @ApiResponse(responseCode = "404", description = "Задачу не знайдено")
+            @ApiResponse(responseCode = "204", description = "Successfully deleted; no content in the response."),
+            @ApiResponse(responseCode = "404", description = "Task not found")
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable String id) {

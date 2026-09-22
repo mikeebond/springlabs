@@ -20,7 +20,7 @@ public class TaskController {
     @GetMapping("/tasks")
     public String showTasks(Model model) {
         model.addAttribute("tasks", taskService.getAllTasks());
-        return "tasks"; // вказує на файл tasks.html
+        return "tasks";
     }
 
     @PostMapping("/tasks/add")

@@ -14,7 +14,8 @@ import java.util.stream.Collectors;
 @Service
 public class TaskService {
 
-    // 1. Ін'єкція через конструктор
+    // 1. Constructor injection
+
     private final TaskRepository taskRepository;
 
     @Autowired
@@ -22,11 +23,11 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-    // 2. Ін'єкція напряму в поле
+    // 2. Direct field injection
     @Autowired
     private DateFormatterHelper dateFormatter;
 
-    // 3. Ін'єкція через сетер
+    // 3. Setter injection
     private PrioritySorterHelper prioritySorter;
 
     @Autowired
@@ -50,7 +51,7 @@ public class TaskService {
         taskRepository.deleteById(id);
     }
 
-    // Фільтрація та пагінація
+    // Filtering and pagination
     public List<Task> getTasks(Boolean completed, int page, int size) {
         return taskRepository.findAll().stream()
                 .filter(t -> completed == null || t.isCompleted() == completed)
@@ -63,7 +64,7 @@ public class TaskService {
         return taskRepository.findById(id);
     }
 
-    // Повне оновлення (PUT)
+    // Full update (PUT)
     public Optional<Task> updateTask(String id, Task updatedTask) {
         return taskRepository.findById(id).map(task -> {
             task.setTitle(updatedTask.getTitle());
@@ -74,7 +75,7 @@ public class TaskService {
         });
     }
 
-    // Часткове оновлення - RFC 7386 Merge Patch (PATCH)
+    // Partial update - RFC 7386 Merge Patch (PATCH)
     public Optional<Task> patchTask(String id, Map<String, Object> updates) {
         return taskRepository.findById(id).map(task -> {
             if (updates.containsKey("title")) task.setTitle((String) updates.get("title"));
