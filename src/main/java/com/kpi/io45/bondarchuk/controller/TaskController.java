@@ -1,5 +1,6 @@
 package com.kpi.io45.bondarchuk.controller;
 
+import com.kpi.io45.bondarchuk.model.Task;
 import com.kpi.io45.bondarchuk.service.TaskService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,18 +26,24 @@ public class TaskController {
 
     @PostMapping("/tasks/add")
     public String addTask(@RequestParam String title, @RequestParam String date, @RequestParam String priority) {
-        taskService.addTask(title, date, priority);
+        Task newTask = new Task(title, date, priority);
+        taskService.addTask(newTask);
         return "redirect:/tasks";
     }
 
     @PostMapping("/tasks/complete")
-    public String completeTask(@RequestParam String id) {
-        taskService.completeTask(id);
+    public String completeTask(@RequestParam Long id) {
+        // Locate the task using the new Long ID, change the status to `true`, and update the database.
+        taskService.getTaskById(id).ifPresent(task -> {
+            task.setCompleted(true);
+            taskService.updateTask(task);
+        });
         return "redirect:/tasks";
     }
 
     @PostMapping("/tasks/delete")
-    public String deleteTask(@RequestParam String id) {
+    public String deleteTask(@RequestParam Long id) {
+        // Deleting the task again Long ID
         taskService.deleteTask(id);
         return "redirect:/tasks";
     }

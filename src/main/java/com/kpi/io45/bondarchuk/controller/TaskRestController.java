@@ -11,11 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
-@Tag(name = "Tasks API", description = "RESTful web service for task management")
+@Tag(name = "Tasks API (JDBC)", description = "RESTful web service for task management with a PostgreSQL connection")
 public class TaskRestController {
 
     private final TaskService taskService;
@@ -24,71 +23,58 @@ public class TaskRestController {
         this.taskService = taskService;
     }
 
-    @Operation(summary = "Get the list of tasks", description = "Returns a list of tasks with support for status filtering and pagination..")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "\n" + "List successfully retrieved")})
+    @Operation(summary = "Get a list of all tasks")
     @GetMapping
     public ResponseEntity<List<Task>> getAllTasks(
-            @RequestParam(required = false) Boolean completed,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(taskService.getTasks(completed, page, size));
+            @RequestParam(required = false) String priority) {
+        if (priority != null) {
+            return ResponseEntity.ok(taskService.getTasksByPriority(priority));
+        }
+        return ResponseEntity.ok(taskService.getAllTasks());
     }
 
     @Operation(summary = "Create a new task")
-    @ApiResponses({@ApiResponse(responseCode = "201", description = "The task has been successfully created")})
+    @ApiResponses({@ApiResponse(responseCode = "201", description = "The task has been successfully created.")})
     @PostMapping
     public ResponseEntity<Task> createTask(@RequestBody Task task) {
-        taskService.addTask(task.getTitle(), task.getDate(), task.getPriority());
+        Long generatedId = taskService.addTask(task);
+        task.setId(generatedId);
         return ResponseEntity.status(HttpStatus.CREATED).body(task);
     }
 
     @Operation(summary = "Get a task by ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "\n" + "Task found"),
-            @ApiResponse(responseCode = "404", description = "Task not found")
-    })
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable String id) {
+    public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
         return taskService.getTaskById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Full task update", description = " Updates all fields of the task with the specified ID.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Successfully updated"),
-            @ApiResponse(responseCode = "404", description = "Task not found")
-    })
+    @Operation(summary = "\n" + "Full task update")
     @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable String id, @RequestBody Task task) {
-        return taskService.updateTask(id, task)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @Operation(summary = "Partial task update", description = "Updates only the provided task fields (RFC 7386 Merge Patch).")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Successfully updated"),
-            @ApiResponse(responseCode = "404", description = "Task not found")
-    })
-    @PatchMapping("/{id}")
-    public ResponseEntity<Task> patchTask(@PathVariable String id, @RequestBody Map<String, Object> updates) {
-        return taskService.patchTask(id, updates)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Void> updateTask(@PathVariable Long id, @RequestBody Task task) {
+        if (taskService.getTaskById(id).isEmpty()) return ResponseEntity.notFound().build();
+        task.setId(id);
+        taskService.updateTask(task);
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Delete task")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Successfully deleted; no content in the response."),
-            @ApiResponse(responseCode = "404", description = "Task not found")
-    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable String id) {
-        if (taskService.getTaskById(id).isPresent()) {
-            taskService.deleteTask(id);
+    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
+        if (taskService.getTaskById(id).isEmpty()) return ResponseEntity.notFound().build();
+        taskService.deleteTask(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "\n" + "Move the task to the archive", description = "Copies the task to the archive table and deletes it from the main table.")
+    @PostMapping("/{id}/archive")
+    public ResponseEntity<Void> archiveTask(@PathVariable Long id) {
+        try {
+            taskService.archiveTask(id);
             return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
     }
 }

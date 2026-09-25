@@ -1,88 +1,68 @@
 package com.kpi.io45.bondarchuk.service;
 
+import com.kpi.io45.bondarchuk.dao.TaskDao;
 import com.kpi.io45.bondarchuk.model.Task;
-import com.kpi.io45.bondarchuk.repository.TaskRepository;
-import com.kpi.io45.bondarchuk.util.DateFormatterHelper;
-import com.kpi.io45.bondarchuk.util.PrioritySorterHelper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
 
-    // 1. Constructor injection
+    private final TaskDao taskDao;
+    private final JdbcClient jdbcClient;
 
-    private final TaskRepository taskRepository;
-
-    @Autowired
-    public TaskService(TaskRepository taskRepository) {
-        this.taskRepository = taskRepository;
+    // We use the implementation via JdbcClient.
+    public TaskService(@Qualifier("jdbcClientDao") TaskDao taskDao, JdbcClient jdbcClient) {
+        this.taskDao = taskDao;
+        this.jdbcClient = jdbcClient;
     }
 
-    // 2. Direct field injection
-    @Autowired
-    private DateFormatterHelper dateFormatter;
+    public Long addTask(Task task) {
+        return taskDao.create(task);
+    }
 
-    // 3. Setter injection
-    private PrioritySorterHelper prioritySorter;
-
-    @Autowired
-    public void setPrioritySorter(PrioritySorterHelper prioritySorter) {
-        this.prioritySorter = prioritySorter;
+    public Optional<Task> getTaskById(Long id) {
+        return taskDao.findById(id);
     }
 
     public List<Task> getAllTasks() {
-        return taskRepository.findAll();
+        return taskDao.findAll();
     }
 
-    public void addTask(String title, String date, String priority) {
-        taskRepository.save(new Task(title, date, priority));
+    public List<Task> getTasksByPriority(String priority) {
+        return taskDao.findByPriority(priority);
     }
 
-    public void completeTask(String id) {
-        taskRepository.markAsCompleted(id);
+    public void updateTask(Task task) {
+        taskDao.update(task);
     }
 
-    public void deleteTask(String id) {
-        taskRepository.deleteById(id);
+    public void deleteTask(Long id) {
+        taskDao.delete(id);
     }
 
-    // Filtering and pagination
-    public List<Task> getTasks(Boolean completed, int page, int size) {
-        return taskRepository.findAll().stream()
-                .filter(t -> completed == null || t.isCompleted() == completed)
-                .skip((long) page * size)
-                .limit(size)
-                .collect(Collectors.toList());
-    }
+    // Transaction demonstration
+    @Transactional
+    public void archiveTask(Long id) {
+        // 1. Find task
+        Task task = taskDao.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
 
-    public Optional<Task> getTaskById(String id) {
-        return taskRepository.findById(id);
-    }
+        // 2. Copy to the archive table.
+        jdbcClient.sql("INSERT INTO task_archives (original_task_id, title) VALUES (?, ?)")
+                .param(1, task.getId())
+                .param(2, task.getTitle())
+                .update();
 
-    // Full update (PUT)
-    public Optional<Task> updateTask(String id, Task updatedTask) {
-        return taskRepository.findById(id).map(task -> {
-            task.setTitle(updatedTask.getTitle());
-            task.setDate(updatedTask.getDate());
-            task.setPriority(updatedTask.getPriority());
-            task.setCompleted(updatedTask.isCompleted());
-            return task;
-        });
-    }
 
-    // Partial update - RFC 7386 Merge Patch (PATCH)
-    public Optional<Task> patchTask(String id, Map<String, Object> updates) {
-        return taskRepository.findById(id).map(task -> {
-            if (updates.containsKey("title")) task.setTitle((String) updates.get("title"));
-            if (updates.containsKey("date")) task.setDate((String) updates.get("date"));
-            if (updates.containsKey("priority")) task.setPriority((String) updates.get("priority"));
-            if (updates.containsKey("completed")) task.setCompleted((Boolean) updates.get("completed"));
-            return task;
-        });
+        //if (true) throw new RuntimeException("Artificial error! The transaction should roll back.");
+
+        // 3. Delete from the main table
+        taskDao.delete(id);
     }
 }
