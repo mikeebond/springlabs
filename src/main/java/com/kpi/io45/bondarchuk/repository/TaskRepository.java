@@ -1,39 +1,27 @@
 package com.kpi.io45.bondarchuk.repository;
 
 import com.kpi.io45.bondarchuk.model.Task;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
+import java.util.List;
 
 @Repository
-public class TaskRepository {
-    private final List<Task> tasks = new ArrayList<>();
+public interface TaskRepository extends CrudRepository<Task, Long> {
 
-    public TaskRepository() {
-        tasks.add(new Task("Зробити лабу №2 зі Spring", "2026-09-17", "Високий"));
-        tasks.add(new Task("Підготуватися до пар", "2026-09-18", "Середній"));
-    }
+    // Requirement 5.2: Auto-generated method by Spring Data JPA naming convention
+    List<Task> findByPriority(String priority);
 
-    public List<Task> findAll() {
-        return tasks;
-    }
+    // Requirement 5.2: Another auto-generated method to find completed tasks
+    List<Task> findByCompletedTrue();
 
-    public void save(Task task) {
-        tasks.add(task);
-    }
+    // Requirement 5.1.1: Search using JPQL with @Query annotation
+    @Query("SELECT t FROM Task t WHERE t.category.id = :categoryId")
+    List<Task> findTasksByCategoryId(@Param("categoryId") Long categoryId);
 
-    public void deleteById(String id) {
-        tasks.removeIf(task -> task.getId().equals(id));
-    }
-
-    public void markAsCompleted(String id) {
-        Optional<Task> taskOpt = tasks.stream().filter(t -> t.getId().equals(id)).findFirst();
-        taskOpt.ifPresent(task -> task.setCompleted(true));
-    }
-    public Optional<Task> findById(String id) {
-        return tasks.stream().filter(t -> t.getId().equals(id)).findFirst();
-    }
+    // Requirement 5.1.2: Search using @NamedQuery
+    // (The query itself is defined in the Task.java entity class)
+    List<Task> findByTitleContaining(@Param("keyword") String keyword);
 }
-
