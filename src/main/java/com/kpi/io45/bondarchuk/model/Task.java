@@ -27,12 +27,12 @@ public class Task {
     @Column(name = "completed")
     private boolean completed;
 
-    // N:1 relationship (Many tasks belong to one category)
+    //N:1 relationship (Many tasks belong to one category)
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id")
     private Category category;
 
-    // A no-argument constructor is required for Hibernate to work.
+    //A no-argument constructor is required for Hibernate to work.
     public Task() {
     }
 
